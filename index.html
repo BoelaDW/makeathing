@@ -1,676 +1,1229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOELA DW // MAKE A THING</title>
-    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --acid-green: #d4ff00;
-            --hot-pink: #ff0055;
-            --deep-purple: #4a00e0;
-            --bg-black: #050505;
-            --text-light: #f4f4f4;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoelaDW // DIY Robotics & Engineering</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09001f;
+  --surface: #0f0028;
+  --border: #2d0055;
+  --primary: #ff2d78;
+  --secondary: #00f0ff;
+  --accent: #c45aff;
+  --text: #c8aee8;
+  --bright: #f2eaff;
+  --dim: #4e2878;
+  --glow-p: 0 0 8px #ff2d7866, 0 0 24px #ff2d7828;
+  --glow-c: 0 0 8px #00f0ff66, 0 0 24px #00f0ff28;
+  --glow-a: 0 0 8px #c45aff66, 0 0 24px #c45aff28;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; cursor: none !important; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  overflow-x: hidden;
+}
 
-        body {
-            background-color: var(--bg-black);
-            color: var(--text-light);
-            font-family: 'Space Mono', monospace;
-            overflow-x: hidden;
-            scroll-behavior: smooth;
-        }
-        
-        /* Wrap the app to prevent body scroll jumping during animations */
-        #app-wrapper {
-            width: 100%;
-            overflow: hidden;
-        }
+/* CRT scanlines */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+  pointer-events: none; z-index: 9999;
+}
 
-        h1, h2, h3, .loud-text { font-family: 'Black Han Sans', sans-serif; text-transform: uppercase; }
+/* Top radial glow */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse 80% 40% at 50% 0%, rgba(100, 0, 180, 0.18) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
 
-        /* ---- SCROLL PROGRESS ---- */
-        .scroll-progress {
-            position: fixed; top: 0; left: 0; width: 0%; height: 4px;
-            background: linear-gradient(90deg, var(--deep-purple), var(--hot-pink), var(--acid-green));
-            z-index: 10000; box-shadow: 0 0 12px var(--acid-green);
-            transition: width 0.05s linear;
-        }
+/* ===== SCROLL PROGRESS ===== */
+#scroll-progress {
+  position: fixed; top: 0; left: 0;
+  height: 2px; width: 0%;
+  background: linear-gradient(to right, var(--primary), var(--accent), var(--secondary));
+  z-index: 10000;
+  box-shadow: var(--glow-p);
+  transition: width .1s linear;
+}
 
-        /* ---- CRT SCANLINES OVERLAY ---- */
-        .scanlines {
-            position: fixed; inset: 0; pointer-events: none; z-index: 9994;
-            background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px);
-        }
+/* ===== NAV ===== */
+nav {
+  position: fixed; top: 0; width: 100%;
+  z-index: 1000;
+  background: rgba(9, 0, 31, 0.95);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  height: 54px;
+  display: flex; align-items: center;
+  padding: 0 2.5rem;
+  justify-content: space-between; gap: 1.5rem;
+}
 
-        /* ---- CUSTOM CURSOR ---- */
-        .cursor-dot, .cursor-outline {
-            position: fixed; top: 0; left: 0;
-            transform: translate(-50%, -50%);
-            border-radius: 50%; z-index: 9999; pointer-events: none;
-        }
-        .cursor-dot { width: 8px; height: 8px; background-color: var(--acid-green); }
-        .cursor-outline { width: 40px; height: 40px; border: 2px solid var(--hot-pink); transition: width 0.2s, height 0.2s, background-color 0.2s; }
+.nav-logo {
+  font-family: 'VT323', monospace;
+  font-size: 1.9rem;
+  color: var(--primary);
+  text-shadow: var(--glow-p);
+  text-decoration: none;
+  letter-spacing: 2px;
+  flex-shrink: 0;
+  animation: neon-flicker 12s 5s infinite;
+}
+.nav-logo span { color: var(--accent); text-shadow: var(--glow-a); }
 
-        /* ---- HERO ---- */
-        .hero {
-            height: 100vh; display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            position: relative; text-align: center;
-        }
+@keyframes neon-flicker {
+  0%,17%,19%,21%,52%,54%,100% { opacity:1; }
+  18%,53% { opacity:0.6; text-shadow:none; }
+  20% { opacity:0.9; }
+}
 
-        .scroll-gear {
-            position: absolute; top: 50%; left: 50%;
-            margin-top: -300px; margin-left: -300px;
-            width: 600px; height: 600px;
-            opacity: 0.1; z-index: 0; transform-origin: center center;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23d4ff00'%3E%3Cpath d='M89.3 43.4l-7.2-1.3c-.6-2.5-1.5-4.9-2.7-7.2l4.8-5.6c1-1.2 1-3 .1-4.2l-6.6-8c-1.1-1.3-3-1.4-4.2-.3l-6 4.4c-2.1-1.5-4.4-2.7-6.9-3.5L59.1 10c-.3-1.6-1.7-2.7-3.3-2.7H44.1c-1.6 0-3 1.1-3.3 2.7l-1.4 7.4c-2.5.8-4.8 2-6.9 3.5l-6-4.4c-1.3-1-3.1-.9-4.2.3l-6.6 8c-.9 1.1-.9 2.9.1 4.2l4.8 5.6c-1.2 2.3-2.1 4.7-2.7 7.2l-7.2 1.3c-1.6.3-2.8 1.7-2.8 3.3v10.3c0 1.6 1.1 3 2.8 3.3l7.2 1.3c.6 2.5 1.5 4.9 2.7 7.2l-4.8 5.6c-1 1.2-1 3-.1 4.2l6.6 8c1.1 1.3 3 1.4 4.2.3l6-4.4c2.1 1.5 4.4 2.7 6.9 3.5l1.4 7.4c.3 1.6 1.7 2.7 3.3 2.7h11.7c1.6 0 3-1.1 3.3-2.7l1.4-7.4c2.5-.8 4.8-2 6.9-3.5l6 4.4c1.3 1 3.1.9 4.2-.3l6.6-8c.9-1.1.9-2.9-.1-4.2l-4.8-5.6c1.2-2.3 2.1-4.7 2.7-7.2l7.2-1.3c1.6-.3 2.8-1.7 2.8-3.3V46.7c.1-1.6-1.1-3-2.8-3.3zM50 67.5c-9.7 0-17.5-7.8-17.5-17.5S40.3 32.5 50 32.5 67.5 40.3 67.5 50 59.7 67.5 50 67.5z'/%3E%3C/svg%3E");
-            background-size: contain;
-        }
+.nav-links { display: flex; gap: 2rem; list-style: none; }
+.nav-links a {
+  font-size: 0.74rem; color: var(--text); text-decoration: none;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  padding-bottom: 2px; border-bottom: 1px solid transparent;
+  transition: color .2s, border-color .2s, text-shadow .2s;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--secondary); text-shadow: var(--glow-c);
+  border-bottom-color: var(--secondary);
+}
 
-        .hero h1 {
-            font-size: 8vw; line-height: 0.9; z-index: 1;
-            color: var(--acid-green); text-shadow: 4px 4px 0px var(--hot-pink);
-            mix-blend-mode: exclusion; min-height: 1.1em;
-        }
+.nav-right { display: flex; align-items: center; gap: 1.2rem; flex-shrink: 0; }
+.nav-uptime { font-size: 0.6rem; color: var(--dim); letter-spacing: 1px; }
+#uptime-val { color: var(--accent); }
+.nav-online {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 0.65rem; color: var(--primary); letter-spacing: 2px;
+}
+.dot-blink {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--primary); box-shadow: var(--glow-p);
+  animation: blink 1.4s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.15} }
 
-        .hero p {
-            margin-top: 20px; font-size: 1.5rem;
-            background: var(--text-light); color: var(--bg-black);
-            padding: 5px 15px; z-index: 1; transform: rotate(-2deg);
-        }
+/* ===== HERO ===== */
+#hero {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; align-items: center;
+  padding: 80px 2.5rem 3rem;
+  overflow: hidden;
+}
 
-        .hero-scroll-hint {
-            position: absolute; bottom: 40px; left: 50%;
-            transform: translateX(-50%); z-index: 1;
-            color: var(--acid-green); font-size: 0.75rem;
-            opacity: 0.5; letter-spacing: 3px;
-            animation: hintBounce 1.8s ease-in-out infinite;
-        }
-        .hero-scroll-hint::after { content: ' ▼'; }
-        @keyframes hintBounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(8px); }
-        }
+.hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
 
-        /* ---- MARQUEES ---- */
-        .marquee-container {
-            border-top: 3px solid var(--acid-green); border-bottom: 3px solid var(--acid-green);
-            padding: 10px 0; background: var(--bg-black);
-            overflow: hidden; display: flex; flex-direction: column; gap: 10px;
-        }
-        .marquee-track { display: flex; white-space: nowrap; width: fit-content; }
-        .marquee-track.left { animation: scrollLeft 15s linear infinite; color: var(--hot-pink); }
-        .marquee-track.right { animation: scrollRight 12s linear infinite; color: var(--acid-green); }
-        .marquee-text { font-size: 2rem; font-family: 'Black Han Sans', sans-serif; padding: 0 20px; }
-        @keyframes scrollLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        @keyframes scrollRight { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+/* Retro sun */
+.hero-sun {
+  position: absolute;
+  width: 520px; height: 520px; border-radius: 50%;
+  background: linear-gradient(to top, #ff0055 0%, #ff4400 22%, #ff8800 45%, #ffcc00 75%, #fffb00 100%);
+  bottom: -260px; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 0 160px rgba(255,45,120,.55), 0 0 300px rgba(196,90,255,.2);
+  overflow: hidden; opacity: 0.78;
+}
+/* Horizontal stripe lines in lower 55% of sun */
+.hero-sun::after {
+  content: '';
+  position: absolute; left:0; right:0; bottom:0; top:42%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0, transparent 5px,
+    rgba(9,0,31,.9) 5px, rgba(9,0,31,.9) 9px
+  );
+}
 
-        /* ---- DAMAGE REPORT (STATS) ---- */
-        .stats-arena {
-            padding: 80px 20px;
-            background: var(--deep-purple);
-            text-align: center; position: relative; overflow: hidden;
-        }
-        .stats-arena::before {
-            content: 'DAMAGE REPORT';
-            position: absolute; font-family: 'Black Han Sans', sans-serif;
-            font-size: 14vw; color: rgba(255,255,255,0.04);
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            white-space: nowrap; pointer-events: none;
-        }
-        .stats-arena h2 { font-size: 3rem; color: var(--acid-green); margin-bottom: 60px; text-shadow: 3px 3px 0px rgba(0,0,0,0.5); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 25px; max-width: 1200px; margin: 0 auto; }
-        .stat-block {
-            border: 2px solid rgba(212, 255, 0, 0.25); padding: 30px 20px;
-            background: rgba(0,0,0,0.35); transition: 0.3s; position: relative; overflow: hidden;
-        }
-        .stat-block::after {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-            background: var(--acid-green); transform: scaleX(0); transform-origin: left; transition: transform 0.3s;
-        }
-        .stat-block:hover { background: rgba(212, 255, 0, 0.06); border-color: var(--acid-green); transform: translateY(-4px); }
-        .stat-block:hover::after { transform: scaleX(1); }
-        .stat-number { font-family: 'Black Han Sans', sans-serif; font-size: 4.5rem; color: var(--acid-green); line-height: 1; text-shadow: 3px 3px 0px var(--hot-pink); }
-        .stat-label { font-size: 0.7rem; color: var(--text-light); margin-top: 10px; opacity: 0.6; letter-spacing: 2px; }
+/* Horizon line */
+.hero-horizon {
+  position: absolute; bottom: 44%; left: 0; right: 0; height: 1px;
+  background: linear-gradient(to right, transparent, var(--primary) 20%, var(--accent) 50%, var(--secondary) 80%, transparent);
+  box-shadow: 0 0 18px var(--primary), 0 0 40px var(--accent);
+  z-index: 2;
+}
 
-        /* ---- BIO SECTION ---- */
-        .bio-arena {
-            padding: 100px 20px; max-width: 1200px; margin: 0 auto;
-            display: flex; flex-wrap: wrap; align-items: center; gap: 50px;
-            border-bottom: 3px dashed var(--deep-purple);
-        }
-        .bio-text { flex: 1; min-width: 300px; }
-        .bio-text h2 { font-size: 3.5rem; color: var(--acid-green); margin-bottom: 20px; text-shadow: 2px 2px 0px var(--hot-pink); }
-        .bio-text p { font-size: 1.2rem; line-height: 1.6; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 20px; border-left: 5px solid var(--hot-pink); }
-        .bio-image-wrapper { flex: 1; min-width: 300px; position: relative; }
-        .glitch-img {
-            display: block; width: 100%; height: auto; border: 5px solid var(--text-light);
-            box-shadow: 15px 15px 0px var(--acid-green);
-            animation: glitch-anim 4s infinite alternate;
-        }
-        @keyframes glitch-anim {
-            0% { filter: hue-rotate(0deg) contrast(100%); transform: translate(0,0); }
-            5% { filter: hue-rotate(90deg) contrast(150%) invert(0.2); transform: translate(-3px, 2px); }
-            10% { filter: hue-rotate(0deg) contrast(100%); transform: translate(0,0); }
-            95% { filter: hue-rotate(0deg) contrast(100%); transform: translate(0,0); }
-            100% { filter: hue-rotate(-90deg) contrast(180%) invert(0.1); transform: translate(3px, -2px); }
-        }
+/* Perspective grid floor */
+.hero-grid {
+  position: absolute; bottom: 0; left: -40%; right: -40%; height: 46%; z-index: 1;
+}
+.hero-grid::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(196,90,255,.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(196,90,255,.3) 1px, transparent 1px);
+  background-size: 80px 80px;
+  transform: perspective(500px) rotateX(78deg);
+  transform-origin: 50% 0%;
+}
+/* Fade-out at top of grid */
+.hero-grid::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 50%);
+}
 
-        /* ---- STICKY STACKING PROJECTS ---- */
-        .project-arena { padding: 100px 20px; display: flex; flex-direction: column; gap: 50px; max-width: 1000px; margin: 0 auto; }
-        .card {
-            position: sticky; top: 100px;
-            background: var(--bg-black); border: 4px solid var(--text-light); padding: 40px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 15px 15px 0px var(--deep-purple); transition: transform 0.3s, box-shadow 0.3s;
-        }
-        .card:nth-child(1) { top: 80px; transform: rotate(-1deg); border-color: var(--acid-green); box-shadow: 15px 15px 0px var(--acid-green); }
-        .card:nth-child(2) { top: 110px; transform: rotate(1.5deg); border-color: var(--hot-pink); box-shadow: 15px 15px 0px var(--hot-pink); }
-        .card:nth-child(3) { top: 140px; transform: rotate(-0.5deg); border-color: var(--deep-purple); box-shadow: 15px 15px 0px var(--deep-purple); }
-        .card:nth-child(4) { top: 170px; transform: rotate(0.8deg); border-color: var(--acid-green); box-shadow: 15px 15px 0px var(--hot-pink); }
-        .card:hover { transform: scale(1.02) rotate(0deg) !important; z-index: 10; }
-        .card-content h2 { font-size: 4rem; margin-bottom: 10px; }
-        .card-content p { font-size: 1.2rem; max-width: 500px; line-height: 1.5; }
-        .card-img { font-size: 8rem; filter: drop-shadow(5px 5px 0px var(--text-light)); flex-shrink: 0; }
-        .tag-wrap { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .tag { background: transparent; border: 1px dashed var(--text-light); padding: 5px 10px; font-size: 0.9rem; }
+.hero-mist {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 48%;
+  background: linear-gradient(to top, rgba(9,0,31,.75), transparent);
+  z-index: 3; pointer-events: none;
+}
 
-        /* ---- FIGHT RECORD ---- */
-        .battle-arena { padding: 100px 20px; max-width: 900px; margin: 0 auto; }
-        .battle-arena > h2 { font-size: 3rem; color: var(--hot-pink); text-shadow: 3px 3px 0px var(--deep-purple); margin-bottom: 60px; }
-        .fight-timeline { position: relative; display: flex; flex-direction: column; gap: 30px; }
-        .fight-timeline::before {
-            content: ''; position: absolute; left: 18px; top: 0; bottom: 0; width: 3px;
-            background: linear-gradient(to bottom, var(--deep-purple), var(--hot-pink), var(--acid-green));
-        }
-        .fight-item {
-            display: flex; gap: 40px; align-items: flex-start;
-            padding-left: 60px; position: relative;
-            opacity: 0; transform: translateX(-25px);
-            transition: opacity 0.5s, transform 0.5s;
-        }
-        .fight-item.visible { opacity: 1; transform: translateX(0); }
-        .fight-item::before {
-            content: ''; position: absolute; left: 6px; top: 18px;
-            width: 26px; height: 26px; border-radius: 50%; border: 4px solid;
-            background: var(--bg-black); z-index: 1;
-        }
-        .fight-item.loss::before { border-color: var(--hot-pink); box-shadow: 0 0 14px var(--hot-pink); }
-        .fight-item.win::before  { border-color: var(--acid-green); box-shadow: 0 0 14px var(--acid-green); }
-        .fight-item.tbd::before  { border-color: var(--deep-purple); box-shadow: 0 0 14px var(--deep-purple); }
-        .fight-card {
-            flex: 1; background: rgba(255,255,255,0.03);
-            border: 2px solid rgba(255,255,255,0.08); padding: 25px 30px;
-            transition: 0.25s;
-        }
-        .fight-card:hover { border-color: var(--hot-pink); background: rgba(255,0,85,0.05); }
-        .fight-number { font-size: 0.7rem; color: var(--deep-purple); letter-spacing: 3px; font-weight: 700; margin-bottom: 6px; }
-        .fight-card h3 { font-size: 2rem; margin-bottom: 4px; color: var(--text-light); }
-        .fight-card p { font-size: 0.9rem; opacity: 0.5; }
-        .result-badge { display: inline-block; margin-top: 14px; padding: 5px 15px; font-family: 'Black Han Sans', sans-serif; font-size: 1rem; }
-        .result-badge.loss { background: var(--hot-pink); color: var(--bg-black); }
-        .result-badge.win  { background: var(--acid-green); color: var(--bg-black); }
-        .result-badge.tbd  { border: 2px dashed var(--deep-purple); color: var(--deep-purple); }
+/* Two-column hero content */
+.hero-inner {
+  position: relative; z-index: 4;
+  max-width: 1100px; margin: 0 auto; width: 100%;
+  display: flex; align-items: center; gap: 4rem;
+}
 
-        /* ---- LINKS / UPLINKS GRID ---- */
-        .links-arena { padding: 80px 20px; background: var(--hot-pink); color: var(--bg-black); text-align: center; }
-        .links-arena h2 { font-size: 4rem; margin-bottom: 40px; text-shadow: 3px 3px 0px var(--text-light); }
-        .links-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: 0 auto; }
-        .link-block {
-            display: block; background: var(--bg-black); color: var(--acid-green);
-            padding: 30px; text-decoration: none; font-size: 1.5rem;
-            font-family: 'Black Han Sans', sans-serif; border: 2px solid var(--bg-black);
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s; will-change: transform;
-        }
-        .link-block:hover { background: var(--text-light); color: var(--bg-black); }
+.hero-text { flex: 1; min-width: 0; }
 
-        /* ---- CONTACT ---- */
-        .contact-arena { padding: 100px 20px; max-width: 800px; margin: 0 auto; }
-        .contact-arena h2 { font-size: 3rem; color: var(--deep-purple); margin-bottom: 30px; text-shadow: 2px 2px 0px var(--acid-green); }
-        .terminal-form { display: flex; flex-direction: column; gap: 20px; }
-        .terminal-input {
-            background: transparent; border: 2px solid var(--text-light);
-            color: var(--acid-green); font-family: 'Space Mono', monospace;
-            padding: 15px; font-size: 1.2rem; transition: 0.3s;
-        }
-        .terminal-input:focus { outline: none; border-color: var(--acid-green); box-shadow: 5px 5px 0px var(--deep-purple); background: rgba(212, 255, 0, 0.05); }
-        textarea.terminal-input { min-height: 150px; resize: vertical; }
-        .submit-btn {
-            background: var(--acid-green); color: var(--bg-black);
-            font-family: 'Black Han Sans', sans-serif; font-size: 2rem;
-            padding: 15px; border: none; box-shadow: 8px 8px 0px var(--hot-pink); transition: 0.1s;
-        }
-        .submit-btn:hover { transform: translate(-3px, -3px); box-shadow: 11px 11px 0px var(--hot-pink); }
-        .submit-btn:active { transform: translate(5px, 5px); box-shadow: 0px 0px 0px var(--hot-pink); }
+.h-prefix {
+  font-size: 0.7rem; color: var(--primary);
+  letter-spacing: 4px; text-transform: uppercase; margin-bottom: 1rem;
+  opacity: 0; animation: fadeup .5s .1s forwards;
+}
+.h-prefix::before { content: '▶ '; }
 
-        /* ---- CHAOS SECTION ---- */
-        .chaos-section {
-            height: 40vh; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; gap: 20px;
-            background: var(--acid-green); border-top: 10px solid var(--text-light);
-        }
-        .chaos-hint { font-size: 0.7rem; color: var(--bg-black); opacity: 0.45; letter-spacing: 2px; }
-        .chaos-btn {
-            font-family: 'Black Han Sans', sans-serif; font-size: 3rem;
-            padding: 20px 40px; background: var(--bg-black); color: var(--acid-green);
-            border: none; box-shadow: 10px 10px 0px var(--hot-pink); transition: all 0.1s;
-        }
-        .chaos-btn:hover { transform: translate(-5px, -5px); box-shadow: 15px 15px 0px var(--hot-pink); }
-        .chaos-btn:active { transform: translate(10px, 10px); box-shadow: 0 0 0 var(--hot-pink); }
+h1 {
+  font-family: 'VT323', monospace;
+  font-size: clamp(3rem, 7.5vw, 5.6rem);
+  line-height: 1.05; letter-spacing: 2px; color: var(--bright);
+  margin-bottom: 0.3rem;
+  opacity: 0; animation: fadeup .5s .25s forwards, glitch 11s 3s infinite;
+}
+h1 .pink { color: var(--primary); text-shadow: var(--glow-p); }
+h1 .purple { color: var(--accent); text-shadow: var(--glow-a); }
 
-        /* ---- FOOTER ---- */
-        footer { padding: 40px 20px; text-align: center; border-top: 2px solid rgba(255,255,255,0.08); font-size: 0.8rem; opacity: 0.35; }
-        footer span { color: var(--hot-pink); }
+@keyframes glitch {
+  0%,93%,100% { transform:translate(0); clip-path:none; }
+  94% { transform:translate(-2px,0); text-shadow:-3px 0 var(--primary),3px 0 var(--secondary); clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%); }
+  95% { transform:translate(2px,0); text-shadow:3px 0 var(--primary),-3px 0 var(--accent); clip-path:polygon(0 55%,100% 55%,100% 80%,0 80%); }
+  96% { transform:translate(0); text-shadow:none; clip-path:none; }
+  97% { transform:translate(-1px,0); text-shadow:-2px 0 var(--secondary); clip-path:none; }
+  98% { transform:translate(0); text-shadow:none; }
+}
 
-        /* ---- FIXED SHAKE ANIMATION ---- 
-           Removed the Y-axis translations so the scrollbar doesn't jump! 
-        */
-        @keyframes shake {
-            0%   { transform: translateX(2px) rotate(0deg); }
-            20%  { transform: translateX(-2px) rotate(-1deg); }
-            40%  { transform: translateX(2px) rotate(1deg); }
-            60%  { transform: translateX(-2px) rotate(0deg); }
-            80%  { transform: translateX(2px) rotate(-1deg); }
-            100% { transform: translateX(-2px) rotate(1deg); }
-        }
-        
-        .shaking { animation: shake 0.18s infinite; filter: invert(1); }
+.h-typed {
+  font-family: 'VT323', monospace;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  color: var(--secondary); text-shadow: var(--glow-c);
+  height: 2.4rem; margin-bottom: .5rem;
+  opacity: 0; animation: fadeup .5s .4s forwards;
+}
+.cursor { animation: blink .8s infinite; color: var(--primary); }
 
-        /* ---- KONAMI OVERLAY ---- */
-        .konami-overlay {
-            position: fixed; inset: 0; background: var(--hot-pink);
-            z-index: 999999; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-            animation: konamiFlash 0.18s infinite;
-            display: none; /* hidden by default */
-        }
-        .konami-overlay.active { display: flex; }
-        
-        @keyframes konamiFlash { 0%,100% { filter: hue-rotate(0deg); } 50% { filter: hue-rotate(180deg); } }
-        .konami-overlay h2 { font-size: 5vw; color: var(--bg-black); }
-        .konami-emoji { font-size: 10rem; display: block; animation: konamiSpin 0.4s linear infinite; }
-        @keyframes konamiSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .konami-sub { font-family: 'Space Mono', monospace; font-size: 0.85rem; margin-top: 30px; opacity: 0.5; color: var(--bg-black); }
+.h-building {
+  font-size: 0.68rem; letter-spacing: 2px; color: var(--dim);
+  margin-bottom: 1.4rem;
+  opacity: 0; animation: fadeup .5s .5s forwards;
+}
+.h-building::before { content: '⚡ CURRENTLY BUILDING: '; color: var(--accent); }
 
-        /* ---- TOOLTIP ---- */
-        [data-tip] { position: relative; }
-        [data-tip]:hover::after {
-            content: attr(data-tip);
-            position: absolute; bottom: calc(100% + 8px); left: 50%;
-            transform: translateX(-50%);
-            background: var(--acid-green); color: var(--bg-black);
-            font-family: 'Space Mono', monospace; font-size: 0.75rem;
-            padding: 4px 10px; white-space: nowrap; pointer-events: none;
-            z-index: 100;
-        }
-    </style>
+.h-desc {
+  max-width: 480px; font-size: 0.84rem; line-height: 1.78;
+  color: var(--text); margin-bottom: 2rem;
+  opacity: 0; animation: fadeup .5s .55s forwards;
+}
+.h-desc::before { content: '// '; color: var(--dim); }
+
+.hero-btns {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+  opacity: 0; animation: fadeup .5s .7s forwards;
+}
+
+.btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase;
+  text-decoration: none; padding: 11px 26px;
+  border: 1px solid; cursor: pointer;
+  display: inline-block; transition: all .2s; background: none;
+}
+.btn-p { color: #000; background: var(--primary); border-color: var(--primary); box-shadow: var(--glow-p); }
+.btn-p:hover { background: transparent; color: var(--primary); }
+.btn-c { color: var(--secondary); border-color: var(--secondary); }
+.btn-c:hover { background: var(--secondary); color: #000; box-shadow: var(--glow-c); }
+
+.h-stats {
+  display: flex; gap: 2.5rem; flex-wrap: wrap;
+  margin-top: 3rem; padding-top: 2rem;
+  border-top: 1px solid var(--border);
+  opacity: 0; animation: fadeup .5s .85s forwards;
+}
+.stat-num {
+  font-family: 'VT323', monospace;
+  font-size: 2.6rem; line-height: 1;
+  color: var(--primary); text-shadow: var(--glow-p);
+}
+.stat-lbl { font-size: 0.62rem; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; margin-top: 2px; }
+
+@keyframes fadeup { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== PROFILE PHOTO ===== */
+.hero-photo {
+  flex-shrink: 0; text-align: center;
+  opacity: 0; animation: fadeup .6s .65s forwards;
+}
+
+.hero-photo-frame {
+  width: 255px; height: 315px;
+  border: 1px solid var(--accent);
+  position: relative; overflow: hidden;
+  box-shadow: 0 0 35px rgba(196,90,255,.3), inset 0 0 40px rgba(196,90,255,.04);
+}
+
+/* Corner brackets */
+.hpf-tl, .hpf-tr, .hpf-bl, .hpf-br {
+  position: absolute; width: 18px; height: 18px; z-index: 5;
+}
+.hpf-tl { top:-1px; left:-1px; border-top:2px solid var(--secondary); border-left:2px solid var(--secondary); }
+.hpf-tr { top:-1px; right:-1px; border-top:2px solid var(--secondary); border-right:2px solid var(--secondary); }
+.hpf-bl { bottom:-1px; left:-1px; border-bottom:2px solid var(--secondary); border-left:2px solid var(--secondary); }
+.hpf-br { bottom:-1px; right:-1px; border-bottom:2px solid var(--secondary); border-right:2px solid var(--secondary); }
+
+/* Scanline overlay */
+.hpf-scan {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom, transparent 0, transparent 3px,
+    rgba(0,240,255,.025) 3px, rgba(0,240,255,.025) 4px
+  );
+}
+
+/* Actual photo — to add yours: uncomment and set the src */
+/* <img src="your-photo.jpg" alt="Profile" class="hero-photo-img"> */
+.hero-photo-img {
+  width: 100%; height: 100%; object-fit: cover;
+  display: block; position: absolute; inset: 0; z-index: 2;
+  filter: saturate(1.1) contrast(1.05);
+}
+
+.hero-photo-placeholder {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .8rem;
+  background: linear-gradient(160deg, #18003a, #090018);
+}
+.ph-icon { font-size: 3.5rem; opacity: 0.35; }
+.ph-text {
+  font-size: 0.62rem; letter-spacing: 2px; color: var(--dim);
+  border: 1px dashed var(--dim); padding: 3px 10px;
+}
+
+.hero-photo-label {
+  font-size: 0.6rem; color: var(--accent);
+  letter-spacing: 2px; margin-top: .6rem;
+  text-shadow: var(--glow-a);
+}
+
+/* ===== TICKER TAPE ===== */
+.ticker-tape {
+  position: relative; z-index: 1;
+  background: rgba(255,45,120,.07);
+  border-top: 1px solid rgba(255,45,120,.2);
+  border-bottom: 1px solid rgba(255,45,120,.2);
+  padding: 7px 0; overflow: hidden;
+}
+.ticker-inner {
+  display: flex; gap: 0; white-space: nowrap;
+  width: max-content;
+  animation: ticker 50s linear infinite;
+  font-size: 0.62rem; letter-spacing: 2px;
+  color: rgba(255,45,120,.65);
+}
+.ticker-inner span { padding: 0 3rem; }
+.ticker-inner span::before { content: '◆ '; color: var(--accent); opacity: 0.7; }
+@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* ===== SECTION SHARED ===== */
+section { position: relative; z-index: 1; padding: 5rem 2.5rem; }
+.s-tag {
+  font-size: 0.66rem; color: var(--primary); letter-spacing: 4px;
+  text-transform: uppercase; margin-bottom: .4rem;
+}
+.s-tag::before { content: '< '; } .s-tag::after { content: ' />'; }
+.s-title {
+  font-family: 'VT323', monospace;
+  font-size: clamp(2rem, 4.5vw, 3.2rem); color: var(--bright); letter-spacing: 2px;
+}
+.s-title span { color: var(--primary); text-shadow: var(--glow-p); }
+.s-line {
+  height: 1px; width: 100px; margin-top: .8rem;
+  background: linear-gradient(to right, var(--primary), var(--accent), transparent);
+  box-shadow: var(--glow-p);
+}
+
+/* ===== PROJECTS ===== */
+#projects { background: var(--surface); }
+.proj-wrap { max-width: 1180px; margin: 0 auto; }
+.proj-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.4rem; margin-top: 2.5rem;
+}
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  opacity: 0; transform: translateY(18px);
+}
+.card.visible { opacity: 1; transform: translateY(0); }
+.card:hover {
+  border-color: rgba(196,90,255,.4);
+  transform: translateY(-5px) rotate(-0.25deg);
+  box-shadow: 0 16px 50px rgba(255,45,120,.12), -4px 0 20px rgba(196,90,255,.08);
+}
+/* Neon top bar on hover */
+.card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, var(--primary), var(--accent), var(--secondary));
+  opacity: 0; transition: opacity .3s;
+}
+.card:hover::before { opacity: 1; }
+/* Chromatic aberration on card title */
+.card:hover .card-title {
+  text-shadow: -2px 0 var(--primary), 2px 0 var(--secondary);
+}
+
+/* Card header — NO mac dots, synthwave style */
+.card-bar {
+  background: rgba(45, 0, 85, 0.45);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-bar-label { font-size: 0.58rem; color: var(--accent); letter-spacing: 2px; opacity: 0.7; }
+.cid { font-size: 0.58rem; color: var(--dim); letter-spacing: 2px; }
+
+/* Card image */
+.card-img {
+  width: 100%; aspect-ratio: 16/9;
+  background: #0b0020; position: relative; overflow: hidden;
+}
+/* Scanlines over image */
+.card-img::after {
+  content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom, transparent 0, transparent 2px,
+    rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px
+  );
+}
+/* To add a project photo, replace the .proj-placeholder div with:
+   <img src="your-photo.jpg" alt="Project name" class="proj-img"> */
+.proj-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  position: absolute; inset: 0; z-index: 2;
+  filter: saturate(1.05);
+  transition: transform .45s ease;
+}
+.card:hover .proj-img { transform: scale(1.05); }
+
+.proj-placeholder {
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .5rem;
+  background: linear-gradient(140deg, #100025, #05000f);
+}
+.card-img-bg {
+  position: absolute; inset: 0; opacity: 0.07;
+  background-image:
+    linear-gradient(var(--accent) 1px, transparent 1px),
+    linear-gradient(90deg, var(--accent) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.proj-icon { font-size: 2.5rem; opacity: 0.55; }
+.proj-img-hint {
+  font-size: 0.56rem; color: var(--dim); letter-spacing: 1px;
+  padding: 2px 8px; border: 1px dashed var(--dim);
+}
+
+.card-body { padding: 1.1rem; }
+.c-status {
+  display: inline-block; font-size: 0.6rem; letter-spacing: 2px;
+  padding: 2px 8px; border: 1px solid; margin-bottom: .7rem;
+}
+.s-done { color: var(--secondary); border-color: var(--secondary); text-shadow: var(--glow-c); }
+.s-wip  { color: var(--primary); border-color: var(--primary); text-shadow: var(--glow-p); animation: blink 2s infinite; }
+.s-arch { color: var(--dim); border-color: #3d1860; }
+
+.card-title {
+  font-family: 'VT323', monospace;
+  font-size: 1.6rem; color: var(--bright); letter-spacing: 1px; margin-bottom: .4rem;
+  transition: text-shadow .12s;
+}
+.card-desc { font-size: 0.76rem; line-height: 1.65; color: var(--text); margin-bottom: .9rem; }
+.card-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.tag {
+  font-size: 0.6rem; padding: 2px 7px;
+  background: rgba(196,90,255,.08);
+  border: 1px solid rgba(196,90,255,.25);
+  color: #a878d8; letter-spacing: 1px;
+}
+
+/* WIP card danger ribbon */
+.card.wip-card::after {
+  content: '⚡ ACTIVE BUILD';
+  position: absolute; top: 22px; right: -34px;
+  background: var(--primary); color: #000;
+  font-size: 0.56rem; font-weight: bold; letter-spacing: 1.5px;
+  padding: 4px 44px;
+  transform: rotate(45deg);
+  z-index: 10;
+  box-shadow: 0 0 12px var(--primary);
+}
+
+/* ===== ABOUT ===== */
+.about-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 5rem; max-width: 1000px; margin: 0 auto; align-items: start;
+}
+.about-hd { margin-bottom: 1.6rem; }
+.about-text p { font-size: 0.85rem; line-height: 1.82; color: var(--text); margin-bottom: .9rem; }
+.about-text .hi { color: var(--primary); text-shadow: var(--glow-p); }
+
+.skill-list { list-style: none; }
+.skill-list li {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .55rem 0; border-bottom: 1px solid var(--border);
+  font-size: 0.8rem;
+}
+.skill-list li::before { content: '▶'; color: var(--primary); font-size: 0.65rem; flex-shrink: 0; }
+.bar-wrap { flex: 1; height: 2px; background: var(--border); margin-left: auto; min-width: 60px; overflow: hidden; }
+.bar {
+  height: 100%; width: 0%;
+  background: linear-gradient(to right, var(--primary), var(--accent), var(--secondary));
+  transition: width 1s cubic-bezier(.4,0,.2,1);
+  box-shadow: 0 0 6px rgba(255,45,120,.4);
+}
+
+/* ===== SOCIALS ===== */
+#socials { background: var(--surface); }
+.socials-wrap { max-width: 860px; margin: 0 auto; }
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 1rem; margin-top: 2.5rem;
+}
+.social-tile {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: .5rem;
+  padding: 1.8rem 1rem;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  position: relative; overflow: hidden;
+  background: var(--bg);
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+}
+.social-tile::after {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, var(--primary), var(--accent));
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .25s;
+}
+.social-tile:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,45,120,.35);
+  box-shadow: 0 10px 35px rgba(255,45,120,.14);
+}
+.social-tile:hover::after { transform: scaleX(1); }
+.social-tile:hover .social-name { color: var(--primary); text-shadow: var(--glow-p); }
+
+.social-glyph {
+  font-family: 'VT323', monospace;
+  font-size: 2.8rem; line-height: 1;
+  color: var(--accent); text-shadow: var(--glow-a);
+}
+.social-name {
+  font-size: 0.72rem; letter-spacing: 3px; color: var(--bright);
+  text-transform: uppercase; transition: color .25s;
+}
+.social-handle { font-size: 0.62rem; color: var(--dim); letter-spacing: 1px; }
+
+/* ===== CONTACT ===== */
+.contact-wrap { max-width: 680px; margin: 0 auto; }
+.terminal {
+  background: var(--surface); border: 1px solid var(--border); margin-top: 2rem;
+  box-shadow: 0 0 50px rgba(196,90,255,.06);
+}
+.t-bar {
+  background: rgba(45,0,85,.5); border-bottom: 1px solid var(--border);
+  padding: 9px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.t-title { font-size: 0.68rem; color: var(--dim); letter-spacing: 2px; }
+.t-bar-status { font-size: 0.6rem; color: var(--primary); letter-spacing: 1px; }
+.t-body { padding: 1.5rem; }
+.t-line { font-size: 0.78rem; margin-bottom: .4rem; color: var(--dim); }
+.t-line .p { color: var(--accent); }
+.t-line .c { color: var(--text); }
+.t-line .o { color: var(--secondary); }
+
+.f-group { margin-bottom: 1.1rem; }
+.f-lbl {
+  display: block; font-size: 0.66rem; color: var(--dim);
+  letter-spacing: 2px; margin-bottom: .35rem;
+}
+.f-lbl::before { content: '# '; color: var(--primary); }
+.f-input {
+  width: 100%; background: transparent; border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--bright); font-family: 'Share Tech Mono', monospace;
+  font-size: 0.86rem; padding: 7px 0; outline: none;
+  transition: border-color .2s;
+}
+.f-input:focus { border-bottom-color: var(--primary); }
+.f-input::placeholder { color: #2a1040; }
+.f-input.err { border-bottom-color: var(--primary); }
+textarea.f-input {
+  resize: vertical; min-height: 90px;
+  border: 1px solid var(--border); padding: 8px;
+}
+textarea.f-input:focus { border-color: var(--primary); }
+textarea.f-input.err { border-color: var(--primary); }
+#send-err { display:none; color:var(--primary); font-size:.76rem; margin-top:.5rem; }
+#send-msg { display:none; color:var(--secondary); margin-top:.5rem; font-size:.76rem; text-shadow:var(--glow-c); }
+
+/* ===== BACK TO TOP ===== */
+#btt {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: var(--primary); color: #000;
+  border: none; width: 40px; height: 40px;
+  font-family: 'Share Tech Mono', monospace; font-size: 1.1rem;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: opacity .3s, box-shadow .2s; z-index: 999;
+  clip-path: polygon(0 20%, 20% 0, 80% 0, 100% 20%, 100% 100%, 0 100%);
+}
+#btt.visible { opacity: 1; pointer-events: all; }
+#btt:hover { box-shadow: var(--glow-p); }
+
+/* ===== FOOTER ===== */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border);
+  padding: 1.8rem 2.5rem;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; color: var(--dim);
+  letter-spacing: 1px; text-align: center; gap: 1rem; flex-wrap: wrap;
+}
+
+/* ===== HAMBURGER ===== */
+.ham {
+  display: none; flex-direction: column; gap: 5px;
+  cursor: pointer; background: none; border: none; padding: 4px;
+}
+.ham span { width: 22px; height: 1.5px; background: var(--text); display: block; transition: .3s; }
+.mob-menu {
+  display: none; flex-direction: column;
+  position: fixed; top: 54px; left: 0; right: 0;
+  background: rgba(9,0,31,.97); border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem; z-index: 999;
+}
+.mob-menu a {
+  color: var(--text); text-decoration: none;
+  font-size: 0.85rem; letter-spacing: 2px;
+  text-transform: uppercase; padding: .6rem 0;
+  border-bottom: 1px solid var(--border); transition: color .2s;
+}
+.mob-menu a:hover { color: var(--primary); }
+.mob-menu.open { display: flex; }
+
+@media(max-width: 900px) {
+  .hero-photo { display: none; }
+}
+@media(max-width: 768px) {
+  .nav-links, .nav-uptime, .nav-online { display: none; }
+  .ham { display: flex; }
+  .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .h-stats { gap: 1.5rem; }
+  .social-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
 </head>
 <body>
 
-    <div class="scroll-progress" id="scroll-progress"></div>
-    <div class="scanlines"></div>
-    <canvas id="spark-canvas" style="position:fixed;top:0;left:0;pointer-events:none;z-index:9995;"></canvas>
-    <div class="cursor-dot" id="cursor-dot"></div>
-    <div class="cursor-outline" id="cursor-outline"></div>
+<div id="scroll-progress"></div>
+<button id="btt" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
 
-    <div class="konami-overlay" id="konami-overlay">
-        <span class="konami-emoji">🐸</span>
-        <h2>MAXIMUM OVERDRIVE</h2>
-        <div class="konami-sub">RELOAD TO DISENGAGE</div>
+<!-- NAV -->
+<nav>
+  <a href="#hero" class="nav-logo">BOELA<span>DW</span></a>
+  <ul class="nav-links">
+    <li><a href="#projects">// Projects</a></li>
+    <li><a href="#about">// About</a></li>
+    <li><a href="#socials">// Links</a></li>
+    <li><a href="#contact">// Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <div class="nav-uptime">SESSION <span id="uptime-val">00:00:00</span></div>
+    <div class="nav-online"><div class="dot-blink"></div>ONLINE</div>
+    <button class="ham" onclick="toggleMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+<div class="mob-menu" id="mob-menu">
+  <a href="#projects" onclick="toggleMenu()">// Projects</a>
+  <a href="#about" onclick="toggleMenu()">// About</a>
+  <a href="#socials" onclick="toggleMenu()">// Links</a>
+  <a href="#contact" onclick="toggleMenu()">// Contact</a>
+</div>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg">
+    <div class="hero-sun"></div>
+    <div class="hero-grid"></div>
+    <div class="hero-horizon"></div>
+    <div class="hero-mist"></div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-text">
+      <div class="h-prefix">BOELADW PORTFOLIO v2.04</div>
+      <h1>FABRICATION <span class="pink">DIY</span><br><span class="purple">COMBAT ROBOTICS</span> &amp; ENGINEERING</h1>
+      <div class="h-typed"><span id="typed"></span><span class="cursor">_</span></div>
+      <div class="h-building">FROG-ISH V2</div>
+      <p class="h-desc">Tinkerer, maker. Or something like that</p>
+      <div class="hero-btns">
+        <a href="#projects" class="btn btn-p">VIEW PROJECTS</a>
+        <a href="#contact" class="btn btn-c">GET IN TOUCH</a>
+      </div>
+      <div class="h-stats">
+        <div>
+          <div class="stat-num" data-target="32" data-suffix="+">0+</div>
+          <div class="stat-lbl">Projects Built</div>
+        </div>
+        <div>
+          <div class="stat-num" data-target="13" data-suffix="+">0+</div>
+          <div class="stat-lbl">Years Tinkering</div>
+        </div>
+        <div>
+          <div class="stat-num">∞</div>
+          <div class="stat-lbl">Failed Prototypes</div>
+        </div>
+      </div>
     </div>
 
-    <div id="app-wrapper">
+    <!-- Profile photo. To add yours: replace the .hero-photo-placeholder div with:
+         <img src="your-photo.jpg" alt="Profile" class="hero-photo-img">              -->
+    <div class="hero-photo">
+      <div class="hero-photo-frame">
+        <div class="hpf-tl"></div><div class="hpf-tr"></div>
+        <div class="hpf-bl"></div><div class="hpf-br"></div>
+        <div class="hpf-scan"></div>
+        <img src="photos/bw-me.jpg" alt="Profile" class="hero-photo-img">
+      </div>
+      <div class="hero-photo-label">[ OPERATOR.JPG ]</div>
+    </div>
+  </div>
+</section>
 
-        <section class="hero">
-            <div class="scroll-gear" id="gear"></div>
-            <h1 id="hero-title">[ BOELA DW ]</h1>
-            <p>FABRICATION // COMBAT ROBOTICS // CODING PROJECTS</p>
-            <div class="hero-scroll-hint">SCROLL DOWN</div>
-        </section>
+<!-- TICKER TAPE 
+<div class="ticker-tape" aria-hidden="true">
+  <div class="ticker-inner">
+    <span>BUILDING THE FUTURE ONE FAILURE AT A TIME</span>
+    <span>DANGER: AUTONOMOUS SYSTEMS ACTIVE</span>
+    <span>WARNING: MAY CONTAIN TRACES OF SOLDER</span>
+    <span>CAFFEINE LEVEL: CRITICAL</span>
+    <span>NO DOCUMENTATION WAS HARMED IN THE MAKING OF THIS</span>
+    <span>CURRENTLY ACCEPTING CHALLENGERS</span>
+    <span>UPTIME: PERPETUAL</span>
+    <span>FAILED PROTOTYPES BUILD CHARACTER</span>
+   
+    <span>BUILDING THE FUTURE ONE FAILURE AT A TIME</span>
+    <span>DANGER: AUTONOMOUS SYSTEMS ACTIVE</span>
+    <span>WARNING: MAY CONTAIN TRACES OF SOLDER</span>
+    <span>CAFFEINE LEVEL: CRITICAL</span>
+    <span>NO DOCUMENTATION WAS HARMED IN THE MAKING OF THIS</span>
+    <span>CURRENTLY ACCEPTING CHALLENGERS</span>
+    <span>UPTIME: PERPETUAL</span>
+    <span>FAILED PROTOTYPES BUILD CHARACTER</span>
+  </div>
+</div>
 
-        <div class="marquee-container">
-            <div class="marquee-track left">
-                <span class="marquee-text">FREECAD ADVOCATE /// SPONSOR MY ROBOT PROJECTS /// LINUX /// MAGIC THE GATHERING ///</span>
-                <span class="marquee-text">UNDERCUTTERS!!! /// METALWORK /// ROBOT FIGHTING /// ARCH LINUX ///</span>
-            </div>
-            <div class="marquee-track right">
-                <span class="marquee-text">TIG WELDING /// CNC MACHINING /// WOODWORKING /// MALCOLM, KEEN EYED NAVIGATOR &lt;3 ///</span>
-                <span class="marquee-text">CODING /// CNC MACHINING /// 3D PRINTING /// PYTHON ///</span>
-            </div>
+-->
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="proj-wrap">
+    <div class="s-tag">BUILD LOG</div>
+    <h2 class="s-title">Featured <span>Projects</span></h2>
+    <div class="s-line"></div>
+    <div class="proj-grid">
+
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">COMBAT ROBOTICS</span>
+          <span class="cid">PROJ-001</span>
         </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_001.jpg" alt="Inevitable End" class="proj-img"> -->
+          <img src="photos/iev5.jpg" alt="Inevitable End" class="proj-img">
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">Inevitable End</div>
+          <p class="card-desc">Beetleweight vertical disk spinner</p>
+          <div class="card-tags">
+            <span class="tag">3D Printing</span><span class="tag">CAD</span><span class="tag">RC</span><span class="tag">METAL FAB</span>
+          </div>
+        </div>
+      </div>
 
-       
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">CNC / TOOLING</span>
+          <span class="cid">PROJ-002</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_002.jpg" alt="DIY CNC Router" class="proj-img"> -->
+          <img src="photos/cnc.jpg" alt="Inevitable End" class="proj-img">
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">DIY CNC ROUTER</div>
+          <p class="card-desc">3-axis CNC router built from aliexpress parts, steel, and salvaged printer parts. Marlin firmware, 220×220mm work area. Currently achieving 0.3mm repeatability cutting aluminium.</p>
+          <div class="card-tags">
+            <span class="tag">ARDUINO</span><span class="tag">MARLIN</span><span class="tag">STEPPER</span><span class="tag">METAL FAB</span>
+          </div>
+        </div>
+      </div>
 
-        <section class="bio-arena">
-            <div class="bio-text">
-                <h2>CREATOR BIO</h2>
-                <p>Based in Christchurch, NZ. I'm currently navigating working/studying as a fabrication apprentice. Growing up I was always interested in pulling things apart, and on occasion putting them back together.</p>
-                <p>Now, I build combat robots, play Magic: The Gathering, and spend way too much time accidentally breaking my linux installation. If I'm not striking arcs, I'm plotting what my next project will be.</p>
-            </div>
-            <div class="bio-image-wrapper">
-                <img src="https://placehold.co/600x400/4a00e0/d4ff00?text=FROG-ISH+V1+[CLASSIFIED+SCHEMATIC]" alt="Frog-ish Schematic" class="glitch-img">
-            </div>
-        </section>
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">COMBAT ROBOTICS</span>
+          <span class="cid">PROJ-003</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_003.jpg" alt="FROG-ISH V1" class="proj-img"> -->
+          <img src="photos/frog-ish.jpg" alt="Inevitable End" class="proj-img">
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">FROG-ISH V1</div>
+          <p class="card-desc">My first attempt at building a featherweight (30lb) combat robot. Built in a fairly short timeline, so a few corners were cut. Ran an e-skate motor for the weapon system</p>
+          <div class="card-tags">
+            <span class="tag">LASER CNC</span><span class="tag">METAL FAB</span><span class="tag">CNC MACHINING</span><span class="tag">3D PRINTING</span>
+          </div>
+        </div>
+      </div>
 
-        <section class="project-arena">
-            <div class="card">
-                <div class="card-content">
-                    <h2>FROG-ISH</h2>
-                    <p>The 30lb undercutter. Made of G450 steel and some bits I had laying around. Designed in FreeCAD, built to take wheels off in the arena. Currently has an 0-2 record, having lost against two gnarly bots, Synthesis30 from the USA, and then Mjolnir; a local bot, while competing under Team Australia at the Robot Rampage world cup event.</p>
-                    <div class="tag-wrap">
-                        <span class="tag">COMBAT ROBOTICS</span>
-                        <span class="tag">BRUSHLESS MOTOR SYSTEMS</span>
-                        <span class="tag">FABRICATION</span>
-                    </div>
-                </div>
-                <div class="card-img">🐸⚙️</div>
-            </div>
-            <div class="card">
-                <div class="card-content">
-                    <h2>JANK CNC</h2>
-                    <p>After retiring my first 3D printer, the glorious fire hazard; Anet A8, I decided to use its components to put together a much sturdier 3-axis system around a Ryobi trim router. Linear rails, welded steel frame, and some aluminium components are featured all over to bring the whole thing together.</p>
-                    <div class="tag-wrap">
-                        <span class="tag">TIG WELDING</span>
-                        <span class="tag">RAPID PROTOTYPING</span>
-                        <span class="tag">HARDWARE MODS</span>
-                    </div>
-                </div>
-                <div class="card-img">🖨️🔧</div>
-            </div>
-            <div class="card">
-                <div class="card-content">
-                    <h2>INEVITABLE END</h2>
-                    <p>My first active weapon combat robot, built for the beetleweight (3lb) class. Weapon disk started as an offcut of 10mm mild steel, carved with an angle grinder and balanced with a drill. Now features a high power hub motor, a massive AR600 blade, two huge Lego wheels, and TPU chassis. It does well locally ;)</p>
-                    <div class="tag-wrap">
-                        <span class="tag">ELECTRONICS</span>
-                        <span class="tag">3D PRINTING</span>
-                        <span class="tag">FREECAD</span>
-                    </div>
-                </div>
-                <div class="card-img">🃏🌌</div>
-            </div>
-            <div class="card">
-                <div class="card-content">
-                    <h2>CODING ADVENTURES</h2>
-                    <p>At a few points in my life I've gone and tried to make cool things using code. It never resulted in much, but I'm fairly proud of the handful of doohickeys I've programmed! I'll put some links further down if you're curious :)</p>
-                    <div class="tag-wrap">
-                        <span class="tag">PYTHON</span>
-                        <span class="tag">WEB</span>
-                        <span class="tag">MISC TOOLS</span>
-                    </div>
-                </div>
-                <div class="card-img">💻⚡</div>
-            </div>
-        </section>
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">TCG ACCESSORIES</span>
+          <span class="cid">PROJ-004</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_004.jpg" alt="Custom MTG Tokens" class="proj-img"> -->
+          <div class="proj-placeholder">
+            <div class="card-img-bg"></div>
+            <div class="proj-icon">☀️</div>
+            <code class="proj-img-hint">proj_004.jpg</code>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">CUSTOM MTG TOKENS</div>
+          <p class="card-desc">Custom machined treasure tokens</p>
+          <div class="card-tags">
+            <span class="tag">CNC MACHINING</span><span class="tag">METAL FINISHING</span><span class="tag">SPRAY PAINTING</span>
+          </div>
+        </div>
+      </div>
 
-       
 
-        <section class="links-arena">
-            <h2>EXTERNAL UPLINKS</h2>
-            <div class="links-grid">
-                <a href="#" class="link-block">▶️ YOUTUBE</a>
-                <a href="#" class="link-block">🛠️ THINGIVERSE</a>
-                <a href="#" class="link-block">📁 GITHUB</a>
-                <a href="#" class="link-block">🎮 ITCH.IO</a>
-            </div>
-        </section>
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">TCG ACCESSORIES</span>
+          <span class="cid">PROJ-004</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_004.jpg" alt="Custom MTG Tokens" class="proj-img"> -->
+          <div class="proj-placeholder">
+            <div class="card-img-bg"></div>
+            <div class="proj-icon">☀️</div>
+            <code class="proj-img-hint">proj_004.jpg</code>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">CUSTOM MTG TOKENS</div>
+          <p class="card-desc">Custom machined treasure tokens</p>
+          <div class="card-tags">
+            <span class="tag">CNC MACHINING</span><span class="tag">METAL FINISHING</span><span class="tag">SPRAY PAINTING</span>
+          </div>
+        </div>
+      </div>
 
-        <section class="contact-arena">
-            <h2>GIVE ME A YELL</h2>
-            <p style="margin-bottom: 20px; line-height: 1.5;">Ready to discuss fabrication commissions, project ideas, or local hardware sponsorships (looking at you, Christchurch suppliers).</p>
-            <form class="terminal-form" onsubmit="event.preventDefault(); handleSubmit(this);">
-                <input type="text" class="terminal-input" placeholder=">> DESIGNATION (NAME)" required>
-                <input type="email" class="terminal-input" placeholder=">> COMM-LINK (EMAIL)" required>
-                <textarea class="terminal-input" placeholder=">> INPUT DATA STREAM (MESSAGE)..." required></textarea>
-                <button type="submit" class="submit-btn" id="send-btn">SEND MESSAGE</button>
-            </form>
-        </section>
 
-        <section class="chaos-section">
-            <button class="chaos-btn" id="chaos-btn">SPIN UP WEAPON</button>
-            <div class="chaos-hint">↑↑↓↓←→←→BA · try it</div>
-        </section>
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">TCG ACCESSORIES</span>
+          <span class="cid">PROJ-004</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_004.jpg" alt="Custom MTG Tokens" class="proj-img"> -->
+          <div class="proj-placeholder">
+            <div class="card-img-bg"></div>
+            <div class="proj-icon">☀️</div>
+            <code class="proj-img-hint">proj_004.jpg</code>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">CUSTOM MTG TOKENS</div>
+          <p class="card-desc">Custom machined treasure tokens</p>
+          <div class="card-tags">
+            <span class="tag">CNC MACHINING</span><span class="tag">METAL FINISHING</span><span class="tag">SPRAY PAINTING</span>
+          </div>
+        </div>
+      </div>
 
-        <footer>
-            <p>BOELA DW // CHRISTCHURCH, NZ // BUILT WITH <span>SPITE</span>, <span>STEEL</span> &amp; <span>ARCH BTW</span></p>
-        </footer>
 
-    </div> <script>
-/* ============================================================
-   CONSOLE EASTER EGG
-   ============================================================ */
-console.log(
-`%c
-██████╗  ██████╗ ███████╗██╗      █████╗     ██████╗ ██╗    ██╗
-██╔══██╗██╔═══██╗██╔════╝██║     ██╔══██╗    ██╔══██╗██║    ██║
-██████╔╝██║   ██║█████╗  ██║     ███████║    ██║  ██║██║ █╗ ██║
-██╔══██╗██║   ██║██╔══╝  ██║     ██╔══██║    ██║  ██║██║███╗██║
-██████╔╝╚██████╔╝███████╗███████╗██║  ██║    ██████╔╝╚███╔███╔╝
-╚═════╝  ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝    ╚═════╝  ╚══╝╚══╝
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">TCG ACCESSORIES</span>
+          <span class="cid">PROJ-004</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_004.jpg" alt="Custom MTG Tokens" class="proj-img"> -->
+          <div class="proj-placeholder">
+            <div class="card-img-bg"></div>
+            <div class="proj-icon">☀️</div>
+            <code class="proj-img-hint">proj_004.jpg</code>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="c-status s-done">COMPLETE</span>
+          <div class="card-title">CUSTOM MTG TOKENS</div>
+          <p class="card-desc">Custom machined treasure tokens</p>
+          <div class="card-tags">
+            <span class="tag">CNC MACHINING</span><span class="tag">METAL FINISHING</span><span class="tag">SPRAY PAINTING</span>
+          </div>
+        </div>
+      </div>
 
-    🐸⚙️  FROG-ISH IS WATCHING YOU INSPECT SOURCE  🐸⚙️
-    Konami code: ↑↑↓↓←→←→BA
-`,
-'color:#d4ff00;background:#050505;font-family:monospace;font-size:11px;'
-);
 
-/* ============================================================
-   SPARK CURSOR TRAIL (CANVAS)
-   ============================================================ */
-const sparkCanvas = document.getElementById('spark-canvas');
-const ctx = sparkCanvas.getContext('2d');
+      
+      <div class="card wip-card">
+        <div class="card-bar">
+          <span class="card-bar-label">COMBAT ROBOTICS</span>
+          <span class="cid">PROJ-005</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_005.jpg" alt="FROG-ISH V2" class="proj-img"> -->
+          <div class="proj-placeholder">
+            <div class="card-img-bg"></div>
+            <div class="proj-icon">🐸</div>
+            <code class="proj-img-hint">proj_005.jpg</code>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="c-status s-wip">IN PROGRESS</span>
+          <div class="card-title">FROG-ISH V2</div>
+          <p class="card-desc">After learning from V1, we're bumping it up and trying a few new things</p>
+          <div class="card-tags">
+            <span class="tag">METAL FAB</span><span class="tag">CAD</span><span class="tag">RC</span><span class="tag">3D PRINTING</span>
+          </div>
+        </div>
+      </div>
 
-function resizeCanvas() {
-    sparkCanvas.width = window.innerWidth;
-    sparkCanvas.height = window.innerHeight;
+      <div class="card">
+        <div class="card-bar">
+          <span class="card-bar-label">ROBOTICS</span>
+          <span class="cid">PROJ-006</span>
+        </div>
+        <div class="card-img">
+          <!-- To add a photo: replace below with <img src="proj_006.jpg" alt="ARM PROTO MK.I" class="proj-img"> -->
+          <div class="proj-placeholder">
+            <div class="card-img-bg"></div>
+            <div class="proj-icon">🤖</div>
+            <code class="proj-img-hint">proj_006.jpg</code>
+          </div>
+        </div>
+        <div class="card-body">
+          <span class="c-status s-arch">ARCHIVED</span>
+          <div class="card-title">ARM PROTO MK.I</div>
+          <p class="card-desc">First robotic arm attempt — 5 DOF, 3D-printed, hobby servos. Clunky but functional. It taught me everything I needed to build MK.II properly. The graveyard honours its sacrifice.</p>
+          <div class="card-tags">
+            <span class="tag">ARDUINO</span><span class="tag">3D PRINT</span><span class="tag">SERVO</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-grid">
+    <div>
+      <div class="about-hd">
+        <div class="s-tag">SYSTEM INFO</div>
+        <h2 class="s-title">About <span>Me</span></h2>
+        <div class="s-line"></div>
+      </div>
+      <div class="about-text">
+        <p>Based in Christchurch, NZ. I'm currently working/studying as a <span class="hi">fabrication apprentice</span>. Growing up I was always interested in pulling things apart, and <span class="hi">on occasion</span> putting them back together.</p>
+        <p>Now, I build <span class="hi">combat robots</span>, play <span class="hi">Magic: The Gathering</span>, and spend too much time fixing my <span class="hi">linux installation</span>.</p>
+        <p>When I'm not building combat robots, I'm <span class="hi">probably at work, lol</span>.</p>
+      </div>
+    </div>
+    <div>
+      <div class="about-hd">
+        <div class="s-tag">STACK</div>
+        <h2 class="s-title">Skills <span>&amp;</span> Tools</h2>
+        <div class="s-line"></div>
+      </div>
+      <ul class="skill-list">
+        <li>MIG Welding <div class="bar-wrap"><div class="bar" data-width="90%"></div></div></li>
+        <li>Python  <div class="bar-wrap"><div class="bar" data-width="25%"></div></div></li>
+        <li>FreeCAD <div class="bar-wrap"><div class="bar" data-width="45%"></div></div></li>
+        <li>Metal Fabrication <div class="bar-wrap"><div class="bar" data-width="88%"></div></div></li>
+        <li>TIG Welding <div class="bar-wrap"><div class="bar" data-width="60%"></div></div></li>
+        <li>Arduino <div class="bar-wrap"><div class="bar" data-width="40%"></div></div></li>
+        <li>Linux <div class="bar-wrap"><div class="bar" data-width="65%"></div></div></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIALS -->
+<section id="socials">
+  <div class="socials-wrap">
+    <div class="s-tag">FIND ME ON</div>
+    <h2 class="s-title">Social <span>Links</span></h2>
+    <div class="s-line"></div>
+    <div class="social-grid">
+      <a href="#" class="social-tile">
+        <div class="social-glyph">GH</div>
+        <div class="social-name">GitHub</div>
+        <div class="social-handle">@your_handle</div>
+      </a>
+      <a href="#" class="social-tile">
+        <div class="social-glyph">⚡</div>
+        <div class="social-name">Itch.io</div>
+        <div class="social-handle">@your_handle</div>
+      </a>
+      <a href="#" class="social-tile">
+        <div class="social-glyph">▶</div>
+        <div class="social-name">YouTube</div>
+        <div class="social-handle">@boeladw</div>
+      </a>
+      <a href="#" class="social-tile">
+        <div class="social-glyph">◉</div>
+        <div class="social-name">Instagram</div>
+        <div class="social-handle">@your_handle</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-wrap">
+    <div class="s-tag">CONTACT</div>
+    <h2 class="s-title">Get In <span>Touch</span></h2>
+    <div class="s-line"></div>
+    <div class="terminal">
+      <div class="t-bar">
+        <div class="t-title">SEND_MESSAGE.sh</div>
+        <div class="t-bar-status">● READY</div>
+      </div>
+      <div class="t-body">
+        <div class="t-line"><span class="p">$</span> <span class="c">./contact.sh --init</span></div>
+        <div class="t-line" style="margin-bottom:1.4rem"><span class="o">Connection established. Ready to receive.</span></div>
+        <div class="f-group">
+          <label class="f-lbl">NAME_PARAM</label>
+          <input type="text" class="f-input" placeholder="your_name" id="c-name">
+        </div>
+        <div class="f-group">
+          <label class="f-lbl">EMAIL_ADDR</label>
+          <input type="email" class="f-input" placeholder="you@example.com" id="c-email">
+        </div>
+        <div class="f-group">
+          <label class="f-lbl">MESSAGE_BODY</label>
+          <textarea class="f-input" placeholder="// Type your message here..." id="c-msg"></textarea>
+        </div>
+        <button class="btn btn-p" id="send-btn" onclick="handleSend()" style="margin-top:.4rem">SEND &gt;&gt;</button>
+        <div id="send-err">// ERROR: All fields required before transmitting.</div>
+        <div id="send-msg">// Transmission received. Talk soon.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span>© 2026 BOELADW // All circuits reserved.</span>
+  <span>Built from scratch. Obviously.</span>
+</footer>
+
+<script>
+// Typing effect
+const phrases = [
+  "BUILDING ROBOTS FROM SCRATCH",
+  "SOLDERING, CODING, ITERATING",
+  "TURNING IDEAS INTO MACHINES",
+  "MAKER // ENGINEER // TINKERER"
+];
+let pi = 0, ci = 0, del = false;
+const tel = document.getElementById('typed');
+function type() {
+  const ph = phrases[pi];
+  if (!del) {
+    tel.textContent = ph.slice(0, ++ci);
+    if (ci === ph.length) { del = true; setTimeout(type, 2400); return; }
+  } else {
+    tel.textContent = ph.slice(0, --ci);
+    if (ci === 0) { del = false; pi = (pi + 1) % phrases.length; }
+  }
+  setTimeout(type, del ? 38 : 68);
 }
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+type();
 
-let sparks = [];
-let prevX = 0, prevY = 0;
-
-window.addEventListener('mousemove', (e) => {
-    const dx = e.clientX - prevX;
-    const dy = e.clientY - prevY;
-    const speed = Math.sqrt(dx * dx + dy * dy);
-
-    if (speed > 100) {
-        const count = Math.min(Math.floor(speed / 4), 6);
-        for (let i = 0; i < count; i++) {
-            sparks.push({
-                x: e.clientX + (Math.random() - 0.5) * 12,
-                y: e.clientY + (Math.random() - 0.5) * 12,
-                vx: (Math.random() - 0.5) * 5 + dx * 0.1,
-                vy: (Math.random() - 0.5) * 5 + dy * 0.1 - 1.5,
-                life: 1.0,
-                size: Math.random() * 5 + 2,
-                color: Math.random() > 0.55 ? '#d4ff00' : (Math.random() > 0.5 ? '#ff0055' : '#ffffff'),
-                square: Math.random() > 0.65
-            });
-        }
-    }
-    prevX = e.clientX;
-    prevY = e.clientY;
-});
-
-function animateSparks() {
-    ctx.clearRect(0, 0, sparkCanvas.width, sparkCanvas.height);
-    for (let i = sparks.length - 1; i >= 0; i--) {
-        const p = sparks[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.18;
-        p.vx *= 0.96;
-        p.life -= 0.028;
-        p.size *= 0.96;
-        if (p.life <= 0 || p.size < 0.4) { sparks.splice(i, 1); continue; }
-        ctx.save();
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
-        if (p.square) {
-            ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-        } else {
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        ctx.restore();
-    }
-    requestAnimationFrame(animateSparks);
+// Mobile menu
+function toggleMenu() {
+  document.getElementById('mob-menu').classList.toggle('open');
 }
-animateSparks();
 
-/* ============================================================
-   CUSTOM CURSOR & HOVER EFFECTS
-   ============================================================ */
-const cursorDot = document.getElementById('cursor-dot');
-const cursorOutline = document.getElementById('cursor-outline');
+// Session uptime counter
+const sessionStart = Date.now();
+setInterval(() => {
+  const s = Math.floor((Date.now() - sessionStart) / 1000);
+  const h = String(Math.floor(s / 3600)).padStart(2, '0');
+  const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const sec = String(s % 60).padStart(2, '0');
+  document.getElementById('uptime-val').textContent = `${h}:${m}:${sec}`;
+}, 1000);
 
-window.addEventListener('mousemove', (e) => {
-    cursorDot.style.left = e.clientX + 'px';
-    cursorDot.style.top  = e.clientY + 'px';
-    cursorOutline.animate({ left: e.clientX + 'px', top: e.clientY + 'px' }, { duration: 500, fill: 'forwards' });
-});
-
-document.querySelectorAll('.card, .chaos-btn, .link-block, .submit-btn, input, textarea, .stat-block, .fight-card').forEach(el => {
-    el.addEventListener('mouseenter', () => {
-        cursorOutline.style.width = '80px';
-        cursorOutline.style.height = '80px';
-        cursorOutline.style.backgroundColor = 'rgba(212, 255, 0, 0.2)';
-    });
-    el.addEventListener('mouseleave', () => {
-        cursorOutline.style.width = '40px';
-        cursorOutline.style.height = '40px';
-        cursorOutline.style.backgroundColor = 'transparent';
-    });
-});
-
-/* ============================================================
-   SCROLL GEAR & PROGRESS BAR
-   ============================================================ */
-const gear = document.getElementById('gear');
-const scrollProgress = document.getElementById('scroll-progress');
-
+// Scroll: progress + active nav + back-to-top
+const sections = ['hero', 'projects', 'about', 'socials', 'contact'];
 window.addEventListener('scroll', () => {
-    const scrollPx = document.documentElement.scrollTop;
-    const winHeightPx = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    
-    // Rotate background gear
-    gear.style.transform = `rotate(${scrollPx * 0.2}deg)`;
-    
-    // Update progress bar
-    const scrolled = (scrollPx / winHeightPx) * 100;
-    scrollProgress.style.width = `${scrolled}%`;
+  const scrolled = window.scrollY;
+  const total = document.documentElement.scrollHeight - window.innerHeight;
+  document.getElementById('scroll-progress').style.width = (scrolled / total * 100) + '%';
+
+  let current = 'hero';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && scrolled >= el.offsetTop - 80) current = id;
+  });
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+
+  document.getElementById('btt').classList.toggle('visible', scrolled > 400);
+}, { passive: true });
+
+// Card scroll reveal with stagger
+const cardObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.card').forEach((c, i) => {
+  c.style.transition = `opacity .5s ${i * 0.08}s ease, transform .5s ${i * 0.08}s ease, border-color .3s, box-shadow .3s`;
+  cardObs.observe(c);
 });
 
-/* ============================================================
-   NUMBER COUNTER ANIMATION
-   ============================================================ */
-const statNumbers = document.querySelectorAll('.stat-number');
-const statObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const el = entry.target;
-            const target = parseInt(el.getAttribute('data-target'));
-            let current = 0;
-            const increment = Math.ceil(target / 40); 
-            
-            const updateCounter = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    el.innerText = target;
-                    clearInterval(updateCounter);
-                } else {
-                    el.innerText = current;
-                }
-            }, 30);
-            statObserver.unobserve(el);
-        }
-    });
+// Animated stat counters
+function countUp(el, target, suffix, duration) {
+  const start = performance.now();
+  function update(now) {
+    const p = Math.min((now - start) / duration, 1);
+    el.textContent = Math.floor((1 - Math.pow(1 - p, 3)) * target) + suffix;
+    if (p < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+const statObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    const t = parseInt(e.target.dataset.target);
+    if (!isNaN(t)) countUp(e.target, t, e.target.dataset.suffix || '', 1500);
+    statObs.unobserve(e.target);
+  });
 }, { threshold: 0.5 });
+document.querySelectorAll('.stat-num[data-target]').forEach(el => statObs.observe(el));
 
-statNumbers.forEach(num => statObserver.observe(num));
-
-/* ============================================================
-   FIGHT TIMELINE ANIMATION
-   ============================================================ */
-const fightItems = document.querySelectorAll('.fight-item');
-const fightObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            fightObserver.unobserve(entry.target);
-        }
+// Animated skill bars
+const barObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    e.target.querySelectorAll('.bar[data-width]').forEach((b, i) => {
+      setTimeout(() => { b.style.width = b.dataset.width; }, i * 90);
     });
-}, { threshold: 0.2 });
+    barObs.unobserve(e.target);
+  });
+}, { threshold: 0.3 });
+const skillList = document.querySelector('.skill-list');
+if (skillList) barObs.observe(skillList);
 
-fightItems.forEach((item, index) => {
-    item.style.transitionDelay = `${index * 0.15}s`;
-    fightObserver.observe(item);
-});
-
-/* ============================================================
-   FORM SUBMISSION
-   ============================================================ */
-function handleSubmit(form) {
-    const btn = form.querySelector('.submit-btn');
-    btn.innerText = "TRANSMISSION SENT //";
-    btn.style.backgroundColor = "var(--deep-purple)";
-    btn.style.color = "var(--text-light)";
-    
-    setTimeout(() => {
-        form.reset();
-        btn.innerText = "SEND TRANSMISSION";
-        btn.style.backgroundColor = "var(--acid-green)";
-        btn.style.color = "var(--bg-black)";
-    }, 3000);
+// Contact form
+function handleSend() {
+  const name = document.getElementById('c-name');
+  const email = document.getElementById('c-email');
+  const msg = document.getElementById('c-msg');
+  const err = document.getElementById('send-err');
+  [name, email, msg].forEach(f => f.classList.remove('err'));
+  err.style.display = 'none';
+  const missing = [name, email, msg].filter(f => !f.value.trim());
+  if (missing.length) {
+    missing.forEach(f => f.classList.add('err'));
+    err.style.display = 'block';
+    return;
+  }
+  const btn = document.getElementById('send-btn');
+  btn.textContent = 'TRANSMITTING...';
+  btn.style.opacity = '0.6';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.style.display = 'none';
+    document.getElementById('send-msg').style.display = 'block';
+  }, 1100);
 }
 
-/* ============================================================
-   CHAOS BUTTON LOGIC 
-   ============================================================ */
-const chaosBtn = document.getElementById('chaos-btn');
-const appWrapper = document.getElementById('app-wrapper');
-
-chaosBtn.addEventListener('mousedown', () => {
-    appWrapper.classList.add('shaking');
-    chaosBtn.innerText = "WEAPON ACTIVE!!!";
-});
-
-chaosBtn.addEventListener('mouseup', () => {
-    appWrapper.classList.remove('shaking');
-    chaosBtn.innerText = "SPIN UP WEAPON";
-});
-
-chaosBtn.addEventListener('mouseleave', () => {
-    appWrapper.classList.remove('shaking');
-    chaosBtn.innerText = "SPIN UP WEAPON";
-});
-
-/* ============================================================
-   KONAMI CODE
-   ============================================================ */
-const konamiCode = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-let konamiIndex = 0;
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === konamiCode[konamiIndex]) {
-        konamiIndex++;
-        if (konamiIndex === konamiCode.length) {
-            document.getElementById('konami-overlay').classList.add('active');
-            konamiIndex = 0;
-        }
-    } else {
-        konamiIndex = 0;
-    }
-});
+// Starfield in hero
+(function() {
+  const bg = document.querySelector('.hero-bg');
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0';
+  bg.prepend(canvas);
+  function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+  resize();
+  const ctx = canvas.getContext('2d');
+  const stars = Array.from({ length: 120 }, () => ({
+    x: Math.random(), y: Math.random() * 0.55,
+    r: Math.random() * 1.2 + 0.2,
+    a: Math.random(),
+    speed: Math.random() * 0.008 + 0.004
+  }));
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      s.a += s.speed;
+      const alpha = (Math.sin(s.a) * 0.5 + 0.5) * 0.85 + 0.15;
+      ctx.beginPath();
+      ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize', resize);
+})();
 </script>
 </body>
 </html>
